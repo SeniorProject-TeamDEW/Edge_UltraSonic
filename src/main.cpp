@@ -5,61 +5,39 @@
 String user_html = "";
 
 char*               ssid_pfix = (char*)"Edge_UltraSonic";
-unsigned long       lastPublishMillis = - pubInterval;
+//unsigned long       lastPublishMillis = - pubInterval;
 
-const int trigPin = 4;
-const int echoPin = 5;
+const int trigPin = 5;
+const int echoPin = 4;
 
-long duration;
-float distance;
+int distance;
 
-StaticJsonDocument<512> root;
-JsonObject data = root.createNestedObject("d");
+boolean detect;
+boolean enable = true;
 
+/*
 void publishData() {
     StaticJsonDocument<512> root;
     JsonObject data = root.createNestedObject("d");
 
 // USER CODE EXAMPLE : command handling
-    data["Detect"] =  "on";
+    data["Detect"] = "success";
+    //data["Detect"] =  distance < 5.0 ? "detect" : "none";
 // USER CODE EXAMPLE : command handling
 
     serializeJson(root, msgBuffer);
-    client.publish("iot-2/type/Edge/id/eSonic/evt/status/fmt/json", msgBuffer);
-}
+    client.publish("iot-2/type/Edge/id/eSensor/evt/status/fmt/json", msgBuffer);
+} */
 
-/*
-void message(char* topic, byte* payload, unsigned int payloadLength) {
-    byte2buff(msgBuffer, payload, payloadLength);
-    StaticJsonDocument<512> root;
-    DeserializationError error = deserializeJson(root, String(msgBuffer));
-  
-    if (error) {
-        Serial.println("handleCommand: payload parse FAILED");
-        return;
-    }
-
-    handleIOTCommand(topic, &root);
-    if (!strcmp(updateTopic, topic)) {
-// USER CODE EXAMPLE : meta data update
-// If any meta data updated on the Internet, it can be stored to local variable to use for the logic
-// in cfg["meta"]["XXXXX"], XXXXX should match to one in the user_html
-        
-// USER CODE EXAMPLE
-    } else if (!strncmp(commandTopic, topic, cmdBaseLen)) {            // strcmp return 0 if both string matches
-        handleUserCommand(&root);
-    }
-}
-*/
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  pinMode(trigPin,OUTPUT);
-  pinMode(echoPin,INPUT);
+    pinMode(trigPin,OUTPUT);
+    pinMode(echoPin,INPUT);
 
-  initDevice();
+    initDevice();
     // If not configured it'll be configured and rebooted in the initDevice(),
     // If configured, initDevice will set the proper setting to cfg variable
 
@@ -79,22 +57,31 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if (!client.connected()) {
+    if (!client.connected()) {
         iot_connect();
-  }
-  //UltraSonic Sensor
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+    }
+    client.loop();
+    //UltraSonic Sensor
+    digitalWrite(trigPin, LOW);
+    digitalWrite(echoPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
 
-  duration = pulseIn(echoPin, HIGH);
+    distance = pulseIn(echoPin, HIGH) * 0.017;
+    delay(50);
+    
+    if(distance <= 10){
+        detect = true;
+    }else{
+        detect = false;
+        enable = true;
+    }
 
-  distance = duration * 0.017;
-
-  if(distance <= 10){
-    Serial.println("PET Detected!");
-    publishData();
-  }
+    if((detect == true) && (enable == true)){
+        Serial.println("Detected!");
+        client.publish("iot-2/type/Edge/id/eSensor/evt/status/fmt/json", "on");
+        enable = false;
+    }
 }
