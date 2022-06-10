@@ -3,6 +3,7 @@
 
 
 String user_html = "";
+int                 cmdBaseLen = 10;
 
 char*               ssid_pfix = (char*)"Edge_UltraSonic";
 //unsigned long       lastPublishMillis = - pubInterval;
