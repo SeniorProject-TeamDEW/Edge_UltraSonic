@@ -8,8 +8,8 @@ int                 cmdBaseLen = 10;
 char*               ssid_pfix = (char*)"Edge_UltraSonic";
 //unsigned long       lastPublishMillis = - pubInterval;
 
-const int trigPin = 5;
-const int echoPin = 4;
+const int trigPin = D5;
+const int echoPin = D4;
 
 int distance;
 
@@ -62,22 +62,24 @@ void loop() {
         iot_connect();
     }
     client.loop();
+    
     //UltraSonic Sensor
     digitalWrite(trigPin, LOW);
-    digitalWrite(echoPin, LOW);
+    //digitalWrite(echoPin, LOW);
     delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
     delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
 
     distance = pulseIn(echoPin, HIGH) * 0.017;
+    Serial.println(distance);
     delay(50);
     
-    if(distance <= 10){
-        detect = true;
-    }else{
+    if(distance >= 24 && distance <= 25){
         detect = false;
         enable = true;
+    }else{
+        detect = true;
     }
 
     if((detect == true) && (enable == true)){
